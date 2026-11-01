@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Оформление заказа — СпортМаркет{% endblock %}
+
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-card-checklist me-2"></i>Оформление заказа</h2>
+
+<div class="row">
+    <!-- Форма контактных данных -->
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow-sm border-0 p-4">
+            <h5 class="fw-bold mb-3">Данные получателя и доставка</h5>
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Имя *</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Фамилия *</label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Телефон *</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Email *</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Адрес доставки *</label>
+                    {{ form.address }}
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Комментарий к заявке</label>
+                    {{ form.comment }}
+                </div>
+                <button type="submit" class="btn btn-warning btn-lg w-100 fw-semibold">Подтвердить и отправить заявку</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Сводка корзины -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 p-4 bg-white">
+            <h5 class="fw-bold mb-3">Состав заявки</h5>
+            <ul class="list-group list-group-flush mb-3">
+                {% for item in cart %}
+                <li class="list-group-item d-flex justify-content-between lh-sm px-0">
+                    <div>
+                        <h6 class="my-0">{{ item.product.name }}</h6>
+                        <small class="text-muted">{{ item.quantity }} шт. × {{ item.price }} ₽</small>
+                    </div>
+                    <span class="text-muted fw-bold">{{ item.total_price }} ₽</span>
+                </li>
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between px-0 pt-3">
+                    <span class="fs-5 fw-bold">Итого к оплате:</span>
+                    <strong class="fs-5 text-primary">{{ cart.get_total_price }} ₽</strong>
+                </li>
+            </ul>
+            <div class="alert alert-secondary small mb-0">
+                <i class="bi bi-info-circle me-1"></i> Оплата производится после ручной проверки наличия и подтверждения заявки менеджером магазина.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('input, textarea').forEach(el => {
+        if (el.type !== 'submit' && el.type !== 'hidden') el.classList.add('form-control');
+    });
+</script>
+{% endblock %}

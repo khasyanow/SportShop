@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Корзина покупок — СпортМаркет{% endblock %}
+
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-cart3 me-2"></i>Ваша корзина</h2>
+
+{% if cart %}
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="ps-3">Товар</th>
+                            <th scope="col" style="width: 170px;">Количество</th>
+                            <th scope="col">Цена</th>
+                            <th scope="col">Сумма</th>
+                            <th scope="col" class="text-end pe-3">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart %}
+                        <tr id="cart-row-{{ item.product.id }}">
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center">
+                                    {% if item.product.image %}
+                                        <img src="{{ item.product.image.url }}" class="rounded me-3" style="width: 50px; height: 50px; object-fit: contain;">
+                                    {% endif %}
+                                    <div>
+                                        <a href="{{ item.product.get_absolute_url }}" class="text-decoration-none fw-semibold text-dark">{{ item.product.name }}</a>
+                                        <div class="small text-muted">Остаток на складе: <span id="stock-val-{{ item.product.id }}">{{ item.product.stock }}</span> шт.</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="input-group input-group-sm">
+                                    <button class="btn btn-outline-secondary btn-decrease" type="button" data-product-id="{{ item.product.id }}">−</button>
+                                    <input type="number"
+                                           class="form-control text-center cart-qty-input"
+                                           id="qty-input-{{ item.product.id }}"
+                                           data-product-id="{{ item.product.id }}"
+                                           value="{{ item.quantity }}"
+                                           min="1"
+                                           max="{{ item.product.stock }}">
+                                    <button class="btn btn-outline-secondary btn-increase" type="button" data-product-id="{{ item.product.id }}">+</button>
+                                </div>
+                            </td>
+                            <td>{{ item.price }} ₽</td>
+                            <td class="fw-bold text-primary" id="item-total-{{ item.product.id }}">
+                                {{ item.total_price }} ₽
+                            </td>
+                            <td class="text-end pe-3">
+                                <form action="{% url 'cart:cart_remove' item.product.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Удалить"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 p-3">
+            <h5 class="fw-bold mb-3">Итого по заказу</h5>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Всего товаров:</span>
+                <span class="fw-semibold" id="cart-items-count">{{ cart|length }}</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-4">
+                <span class="fs-5 fw-bold">Итоговая сумма:</span>
+                <span class="fs-5 fw-bold text-primary" id="cart-total-price">{{ cart.get_total_price }} ₽</span>
+            </div>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'orders:order_create' %}" class="btn btn-warning btn-lg w-100 fw-semibold">Перейти к оформлению</a>
+            {% else %}
+                <div class="alert alert-info small mb-3">
+                    <i class="bi bi-info-circle me-1"></i> Оформление доступно только авторизованным покупателям.
+                </div>
+                <a href="{% url 'users:login' %}?next={% url 'cart:cart_detail' %}" class="btn btn-primary w-100 fw-semibold mb-2">Войти для оформления</a>
+                <a href="{% url 'users:register' %}" class="btn btn-outline-secondary w-100 btn-sm">Зарегистрироваться</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+
+function sendQuantityUpdate(productId, newQty) {
+    const inputField = document.getElementById(`qty-input-${productId}`);
+    const maxStock = parseInt(inputField.getAttribute('max')) || 1;
+
+    if (newQty > maxStock) {
+        alert(`Нельзя выбрать больше ${maxStock} шт. (ограничено складским остатком)`);
+        newQty = maxStock;
+    } else if (newQty < 1) {
+        newQty = 1;
+    }
+
+    inputField.value = newQty;
+
+    const formData = new FormData();
+    formData.append('quantity', newQty);
+
+    fetch(`/cart/update/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(res => {
+        if (!res.ok) throw new Error('Ошибка связи с сервером');
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            inputField.value = data.quantity;
+            document.getElementById(`item-total-${productId}`).textContent = data.item_total_price;
+            document.getElementById('cart-total-price').textContent = data.cart_total_price;
+            document.getElementById('cart-items-count').textContent = data.cart_total_items;
+
+            const badge = document.getElementById('navbar-cart-badge');
+            if (badge) badge.textContent = data.cart_total_items;
+        }
+    })
+    .catch(err => alert('Произошла ошибка при обновлении корзины: ' + err));
+}
+
+document.querySelectorAll('.btn-increase').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const pId = this.dataset.productId;
+        const input = document.getElementById(`qty-input-${pId}`);
+        sendQuantityUpdate(pId, parseInt(input.value) + 1);
+    });
+});
+
+document.querySelectorAll('.btn-decrease').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const pId = this.dataset.productId;
+        const input = document.getElementById(`qty-input-${pId}`);
+        sendQuantityUpdate(pId, parseInt(input.value) - 1);
+    });
+});
+
+document.querySelectorAll('.cart-qty-input').forEach(input => {
+    input.addEventListener('change', function() {
+        sendQuantityUpdate(this.dataset.productId, parseInt(this.value) || 1);
+    });
+});
+</script>
+
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-cart-x fs-1 text-muted"></i>
+    <h4 class="mt-3 text-muted">Ваша корзина пуста</h4>
+    <a href="{% url 'catalog:product_list' %}" class="btn btn-warning mt-3 fw-semibold">Перейти в каталог</a>
+</div>
+{% endif %}
+{% endblock %}

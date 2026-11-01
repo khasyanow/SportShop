@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Контакты и самовывоз — СпортМаркет{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <h2 class="fw-bold mb-4 text-center"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Контакты и пункт самовывоза</h2>
+            
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-telephone me-2"></i>Телефоны для связи</h6>
+                        <p class="mb-1"><strong>Отдел продаж:</strong> +7 (495) 777-55-22</p>
+                        <p class="mb-0"><strong>Поддержка клиентов:</strong> 8 (800) 555-35-35</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-envelope me-2"></i>Электронная почта</h6>
+                        <p class="mb-1"><strong>Заказы:</strong> orders@sportmarket.ru</p>
+                        <p class="mb-0"><strong>Сотрудничество:</strong> info@sportmarket.ru</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-clock me-2"></i>Режим работы</h6>
+                        <p class="mb-1"><strong>Пн — Пт:</strong> 09:00 – 21:00</p>
+                        <p class="mb-0"><strong>Сб — Вс:</strong> 10:00 – 19:00</p>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 h-100">
+                        <h6 class="fw-bold text-primary mb-2"><i class="bi bi-box-seam me-2"></i>Пункт выдачи (Самовывоз)</h6>
+                        <p class="mb-1">г. Москва, ул. 2-я Бауманская, д. 5, стр. 1</p>
+                        <small class="text-muted">Бесплатный самовывоз после подтверждения менеджером.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info d-flex align-items-center mb-0" role="alert">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Внимание:</strong> Товар резервируется в пункте самовывоза на срок до 3-х рабочих дней после подтверждения заявки сотрудником магазина.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Избранное — СпортМаркет{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0"><i class="bi bi-heart-fill text-danger me-2"></i>Избранные товары</h2>
+    <span class="text-muted small">Всего товаров: <span id="favorites-page-total">{{ products|length }}</span></span>
+</div>
+
+{% if not user.is_authenticated and products %}
+    <div class="alert alert-warning shadow-sm d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+        <div>
+            Список сохранен только в рамках текущей сессии веб-браузера.
+            <a href="{% url 'users:login' %}?next={% url 'cart:favorite_list' %}" class="fw-bold text-dark">Авторизуйтесь</a>,
+            чтобы список не пропал после закрытия вкладки.
+        </div>
+    </div>
+{% endif %}
+
+{% if products %}
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4" id="favorites-grid">
+    {% for product in products %}
+    <div class="col favorite-card-col" id="fav-col-{{ product.id }}">
+        <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+            <div class="ratio ratio-4x3 bg-light text-center">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top object-fit-contain p-2" alt="{{ product.name }}">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center text-muted">
+                        <i class="bi bi-image fs-1"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-secondary">{{ product.category.name }}</span>
+
+                    <a href="{% url 'cart:favorite_toggle' product.id %}" class="text-decoration-none ajax-fav-btn" title="Удалить из избранного">
+                        <i class="bi bi-heart-fill text-danger fs-5"></i>
+                    </a>
+                </div>
+
+                <h6 class="card-title fw-bold text-truncate" title="{{ product.name }}">
+                    <a href="{{ product.get_absolute_url }}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                </h6>
+
+                <div class="mt-auto pt-2">
+                    <div class="fs-5 fw-bold text-primary mb-3">{{ product.price }} ₽</div>
+
+                    {% if product.id in cart_product_ids %}
+                        <a href="{% url 'cart:cart_detail' %}" class="btn btn-success btn-sm w-100 fw-semibold" title="Перейти в корзину">
+                            <i class="bi bi-check-lg me-1"></i>В корзине
+                        </a>
+                    {% elif product.stock > 0 %}
+                        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="ajax-add-to-cart">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning btn-sm w-100 fw-semibold">
+                                <i class="bi bi-cart-plus me-1"></i>В корзину
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-secondary btn-sm w-100" disabled>Нет на складе</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-heartbreak fs-1 text-muted"></i>
+    <h4 class="mt-3 text-muted">В избранном пока ничего нет</h4>
+    <a href="{% url 'catalog:product_list' %}" class="btn btn-warning mt-3 fw-semibold">Перейти в каталог</a>
+</div>
+{% endif %}
+{% endblock %}

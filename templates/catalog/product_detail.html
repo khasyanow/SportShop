@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.name }} — СпортМаркет{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'catalog:product_list' %}" class="text-decoration-none">Каталог</a></li>
+        <li class="breadcrumb-item"><a href="{{ product.category.get_absolute_url }}" class="text-decoration-none">{{ product.category.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+    </ol>
+</nav>
+
+<div class="card shadow-sm border-0 p-4">
+    <div class="row g-4">
+        <!-- Картинка товара -->
+        <div class="col-md-5 text-center">
+            <div class="ratio ratio-1x1 bg-light rounded d-flex align-items-center justify-content-center">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid object-fit-contain p-3" alt="{{ product.name }}">
+                {% else %}
+                    <i class="bi bi-image fs-1 text-muted"></i>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <h2 class="fw-bold mb-2">{{ product.name }}</h2>
+            <div class="mb-3">
+                <div class="mb-2">
+                    {% if product.sports.all %}
+                        {% for s in product.sports.all %}
+                            <span class="badge bg-info text-dark me-1">{{ s.name }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="badge bg-secondary me-1">Универсальный</span>
+                    {% endif %}
+                </div>
+                {% if product.stock > 0 %}
+                    <span class="badge bg-success">В наличии: {{ product.stock }} шт.</span>
+                {% else %}
+                    <span class="badge bg-danger">Под заказ</span>
+                {% endif %}
+            </div>
+
+            <div class="fs-2 fw-bold text-primary mb-4">{{ product.price }} ₽</div>
+
+            <div class="d-flex gap-3 mb-4">
+                {% if product.id in cart_product_ids %}
+                    <a href="{% url 'cart:cart_detail' %}" class="btn btn-success btn-lg px-4 fw-semibold">
+                        <i class="bi bi-check-lg me-2"></i>В корзине
+                    </a>
+                {% elif product.stock > 0 %}
+                    <form action="{% url 'cart:cart_add' product.id %}" method="post" class="ajax-add-to-cart">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning btn-lg px-4 fw-semibold">
+                            <i class="bi bi-cart-plus me-2"></i>Добавить в корзину
+                        </button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-secondary btn-lg px-4" disabled>Нет в наличии</button>
+                {% endif %}
+
+                <a href="{% url 'cart:favorite_toggle' product.id %}" class="btn {% if product.id in favorite_product_ids %}btn-danger{% else %}btn-outline-danger{% endif %} btn-lg ajax-fav-btn">
+                    <i class="bi {% if product.id in favorite_product_ids %}bi-heart-fill{% else %}bi-heart{% endif %} me-2"></i>
+                    {% if product.id in favorite_product_ids %}В избранном{% else %}В избранное{% endif %}
+                </a>
+            </div>
+
+            <h5 class="fw-bold mt-4">Описание</h5>
+            <p class="text-muted">{{ product.description|linebreaks }}</p>
+
+            {% if product.specifications %}
+                <h5 class="fw-bold mt-4">Характеристики</h5>
+                <p class="text-muted">{{ product.specifications|linebreaks }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+</div>
+
+    {% if recommended_products %}
+    <div class="mt-5 mb-5">
+        <h4 class="fw-bold mb-4">С этим товаром также покупают</h4>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            {% for rec in recommended_products %}
+            <div class="col favorite-card-col">
+                <div class="card h-100 shadow-sm border-0 d-flex flex-column">
+                    <div class="ratio ratio-4x3 bg-light text-center">
+                        {% if rec.image %}
+                            <img src="{{ rec.image.url }}" class="card-img-top object-fit-contain p-2" alt="{{ rec.name }}">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center text-muted">
+                                <i class="bi bi-image fs-1"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-secondary">{{ rec.category.name }}</span>
+                            <a href="{% url 'cart:favorite_toggle' rec.id %}" class="text-decoration-none ajax-fav-btn" title="В избранное">
+                                {% if rec.id in favorite_product_ids %}
+                                    <i class="bi bi-heart-fill text-danger fs-5"></i>
+                                {% else %}
+                                    <i class="bi bi-heart text-secondary fs-5"></i>
+                                {% endif %}
+                            </a>
+                        </div>
+
+                        <h6 class="card-title fw-bold text-truncate" title="{{ rec.name }}">
+                            <a href="{{ rec.get_absolute_url }}" class="text-decoration-none text-dark">{{ rec.name }}</a>
+                        </h6>
+
+                        <div class="mt-auto pt-2">
+                            <div class="fs-5 fw-bold text-primary mb-3">{{ rec.price }} ₽</div>
+
+                            {% if rec.id in cart_product_ids %}
+                                <a href="{% url 'cart:cart_detail' %}" class="btn btn-success btn-sm w-100 fw-semibold">
+                                    <i class="bi bi-check-lg me-1"></i>В корзине
+                                </a>
+                            {% elif rec.stock > 0 %}
+                                <form action="{% url 'cart:cart_add' rec.id %}" method="post" class="ajax-add-to-cart">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning btn-sm w-100 fw-semibold">
+                                        <i class="bi bi-cart-plus me-1"></i>В корзину
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm w-100" disabled>Нет на складе</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+{% endblock %}

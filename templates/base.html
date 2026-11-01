@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}СпортМаркет — Интернет-магазин спортинвентаря{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="d-flex flex-column min-vh-100 bg-light">
+
+    <!-- Шапка -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'catalog:product_list' %}">
+                <i class="bi bi-trophy-fill text-warning me-2"></i>СпортМаркет
+            </a>
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'catalog:product_list' %}">Каталог</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{% url 'catalog:contacts' %}">Контакты</a>
+                </li>
+            </ul>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Строка поиска -->
+                <form class="d-flex mx-auto my-2 my-lg-0 w-50" method="get" action="{% url 'catalog:product_list' %}">
+                    <div class="input-group">
+                        <input class="form-control" type="search" name="q" placeholder="Поиск спортинвентаря..." value="{{ query }}">
+                        <button class="btn btn-warning" type="submit"><i class="bi bi-search"></i></button>
+                    </div>
+                </form>
+
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item me-3">
+                        <a class="nav-link text-white position-relative" href="{% url 'cart:favorite_list' %}">
+                            <i class="bi bi-heart me-1"></i>Избранное
+                            <span class="badge rounded-pill bg-danger" id="navbar-fav-badge" {% if not favorite_product_ids %}style="display: none;"{% endif %}>
+                                {{ favorite_product_ids|length }}
+                            </span>
+                        </a>
+                    </li>
+                    <li class="nav-item me-3">
+                        <a class="btn btn-outline-warning position-relative" id="navbar-cart-btn" href="{% url 'cart:cart_detail' %}">
+                            <i class="bi bi-cart3 me-1"></i>Корзина
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="navbar-cart-badge"
+                                  style="{% if cart|length == 0 %}display: none;{% endif %}">
+                                {{ cart|length }}
+                            </span>
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'orders:order_list' %}">Мои заказы</a></li>
+                                <li><a class="dropdown-item" href="{% url 'users:profile' %}">Профиль</a></li>
+                                {% if user.is_staff %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="/admin/" target="_blank">Панель менеджера</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'users:logout' %}">Выйти</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="{% url 'users:login' %}?next={{ request.path }}"><i class="bi bi-box-arrow-in-right me-1"></i>Войти</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <main class="container my-4 flex-grow-1">
+        {% if messages %}
+            <div class="row">
+                <div class="col-12">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show shadow-sm" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Футер -->
+    <footer class="bg-dark text-white text-center py-4 mt-auto">
+        <div class="container">
+            <p class="mb-0 text-secondary">© 2026 Интернет-магазин спортинвентаря «СпортМаркет». Все права защищены.</p>
+            <small class="text-secondary">Курсовая работа по ТРПС | МГТУ им. Н.Э. Баумана (ИУ6)</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <input type="hidden" id="global-csrf" value="{{ csrf_token }}">
+
+    <script>
+    function getCSRFToken() {
+        return document.getElementById('global-csrf').value;
+    }
+
+    document.addEventListener('click', function(e) {
+        const favBtn = e.target.closest('.ajax-fav-btn');
+        if (!favBtn) return;
+
+        e.preventDefault();
+        const url = favBtn.getAttribute('href');
+        const icon = favBtn.querySelector('i');
+
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const favBadge = document.getElementById('navbar-fav-badge');
+                if (favBadge) {
+                    favBadge.textContent = data.total_favorites;
+                    favBadge.style.display = data.total_favorites > 0 ? 'inline-block' : 'none';
+                }
+
+                if (data.is_favorite) {
+                    icon.className = 'bi bi-heart-fill text-danger fs-5';
+                } else {
+                    icon.className = 'bi bi-heart text-secondary fs-5';
+
+                    const favCardCol = favBtn.closest('.favorite-card-col');
+                    if (favCardCol) {
+                        favCardCol.style.transition = 'all 0.3s ease';
+                        favCardCol.style.opacity = '0';
+                        favCardCol.style.transform = 'scale(0.8)';
+                        setTimeout(() => {
+                            favCardCol.remove();
+                            const pageCount = document.getElementById('favorites-page-total');
+                            if (pageCount) {
+                                pageCount.textContent = data.total_favorites;
+                            }
+                            if (data.total_favorites === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    }
+                }
+            }
+        })
+        .catch(err => console.error('Ошибка избранного:', err));
+    });
+
+    document.addEventListener('submit', function(e) {
+        const cartForm = e.target.closest('.ajax-add-to-cart');
+        if (!cartForm) return;
+
+        e.preventDefault();
+        const btn = cartForm.querySelector('button[type="submit"]');
+        const formData = new FormData(cartForm);
+        formData.append('ajax', '1');
+
+        fetch(cartForm.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                const badge = document.getElementById('navbar-cart-badge');
+                if (badge) {
+                    badge.textContent = data.cart_total_items;
+                    badge.style.display = data.cart_total_items > 0 ? 'inline-block' : 'none';
+                }
+
+                const isFullWidth = btn.classList.contains('w-100');
+                const isLarge = btn.classList.contains('btn-lg');
+
+                let linkClass = 'btn btn-success fw-semibold ';
+                let text = '<i class="bi bi-check-lg"></i>';
+
+                if (isLarge) {
+                    linkClass += 'btn-lg px-4';
+                    text = '<i class="bi bi-check-lg me-2"></i>В корзине';
+                } else if (isFullWidth) {
+                    linkClass += 'btn-sm w-100';
+                    text = '<i class="bi bi-check-lg me-1"></i>В корзине';
+                } else {
+                    linkClass += 'btn-sm';
+                }
+
+                cartForm.outerHTML = `<a href="/cart/" class="${linkClass}" title="Товар уже в корзине (перейти)">${text}</a>`;
+            }
+        })
+        .catch(err => console.error('Ошибка добавления в корзину:', err));
+    });
+    </script>
+</body>
+</html>
